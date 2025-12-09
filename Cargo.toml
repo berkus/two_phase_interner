@@ -1,0 +1,24 @@
+[package]
+name = "two_phase_interner"
+version = "0.1.0"
+authors = ["Berkus Decker <berkus+crates@madfire.net>"]
+description = "Two-phase string and byte array interning"
+edition = "2024"
+readme = "README.md"
+repository = "https://github.com/berkus/two_phase_interner"
+license = "MIT OR Apache-2.0"
+keywords = ["intern", "interner", "interning", "deduplication", "symbol", "symbols", "atom", "atoms"]
+categories = [
+    "algorithms",
+    "caching",
+    "compression",
+    "data-structures",
+]
+
+[features]
+default = ["serialize"]
+serialize = ["dep:leb128"]
+
+[dependencies.leb128]
+optional = true
+version = "0.2.5"
