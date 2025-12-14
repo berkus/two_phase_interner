@@ -1,0 +1,64 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+name: build-and-test
+env:
+  CARGO_TERM_COLOR: always
+  MSRV: 1.85.1
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust:
+          - stable
+          - $MSRV # MSRV
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@master
+        name: Setup rust toolchain
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+
+      - name: Build and test with all features
+        run: cargo test --all-features
+
+      - name: Build and test with minimal features
+        run: cargo test --no-default-features
+
+      - name: Check for non-standard formatting
+        if: ${{ matrix.rust == 'stable' }}
+        run: cargo fmt --all -- --check
+
+      - name: Check for clippy hints
+        if: ${{ matrix.rust == 'stable' }}
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+  # Make sure the library builds with all dependencies downgraded to their
+  # oldest versions allowed by the semver spec. This ensures we have not
+  # under-specified any dependency
+  minimal-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install needed Rust toolchain versions
+        run: |
+          rustup install $MSRV
+          rustup install nightly
+
+      - name: Downgrade dependencies to minimal versions
+        run: cargo +nightly update -Z minimal-versions
+
+      - name: Compile with minimal versions
+        run: cargo +$MSRV build --all-targets --locked
